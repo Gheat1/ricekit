@@ -24,6 +24,7 @@ rice-friendly terminal app needs, minus the app.
 | `ricekit.widgets` | `NavList` (vim keys, quiet cursor), `Splitter` (drag-to-resize with persistence hook, double-click reset), `KitScroll`, `pop_in` (the one sanctioned animation) |
 | `ricekit.modals` | `PickerModal` (generic chooser), `ThemeModal` (restyles the app live as you scroll), `HelpModal` (keybinding cheatsheet from plain data) |
 | `ricekit.icons` | curated nerd-font icons as `\uXXXX` escapes + unicode state glyphs (◌ ○ ◐ ◑ ● ⊘) + mini bar gauges |
+| `ricekit.fx` | text effects — the letter wave (`Wave` + `wave_markup`: **G**heat → g**H**eat → …) and braille spinner frames, driven by one cheap shared ticker |
 | `ricekit.storage` | `AppDirs` — XDG state/cache/config with merge-on-save state and chmod-600 secrets |
 | [`DESIGN.md`](DESIGN.md) | the philosophy: cache-first speed, shape language, color roles, motion rules — and the appendix of Textual sharp edges that each cost a day to find |
 

@@ -14,9 +14,9 @@ See DESIGN.md for the philosophy and the sharp edges.
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
-from ricekit import icons
+from ricekit import fx, icons
 from ricekit.app import KitApp
 from ricekit.palette import Palette, palette
 from ricekit.storage import AppDirs
@@ -27,6 +27,7 @@ __all__ = [
     "Palette",
     "palette",
     "icons",
+    "fx",
     "AppDirs",
     "KIT_THEMES",
     "KIT_THEME_NAMES",
