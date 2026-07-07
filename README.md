@@ -80,6 +80,7 @@ the sharp-edges table.
 ## the suite
 
 - [**ltui**](https://github.com/Gheat1/ltui) — a fast, beautiful TUI for Linear (where all of this came from)
+- [**NaviTui**](https://github.com/Gheat1/NaviTui) — an animated terminal player for Navidrome, cover art and all
 - yours next?
 
 ## license
