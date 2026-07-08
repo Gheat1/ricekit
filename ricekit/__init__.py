@@ -1,7 +1,8 @@
 """ricekit — a developer's TUI suite for Textual.
 
 The themes, widgets, modals, icons, and design rules extracted from
-building ltui (https://github.com/Gheat1/ltui): everything a fast,
+building ltui (https://github.com/Gheat1/ltui) — and now shared by its
+siblings jtui (Jira) and sctui (Shortcut): everything a fast,
 clean, rice-friendly terminal app needs, minus the app.
 
     from ricekit import KitApp, palette, icons
