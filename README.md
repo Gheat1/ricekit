@@ -5,8 +5,8 @@
 **A developer's TUI suite for [Textual](https://github.com/Textualize/textual).**
 
 The themes, widgets, modals, icons, and design rules extracted from building
-[ltui](https://github.com/Gheat1/ltui) — and now powering its whole family
-([jtui](https://github.com/Gheat1/jtui), [sctui](https://github.com/Gheat1/sctui)) —
+[ltui](https://github.com/runpantheon/ltui) — and now powering its whole family
+(jtui, sctui, same repo) —
 everything a fast, clean, rice-friendly terminal app needs, minus the app.
 
 <img src="assets/gallery.png" alt="ricekit gallery" width="100%">
@@ -81,9 +81,7 @@ the sharp-edges table.
 
 ## the suite
 
-- [**ltui**](https://github.com/Gheat1/ltui) — a fast, beautiful TUI for Linear (where all of this came from)
-- [**jtui**](https://github.com/Gheat1/jtui) — the same app pointed at Jira
-- [**sctui**](https://github.com/Gheat1/sctui) — and at Shortcut
+- [**the tracker TUI suite**](https://github.com/runpantheon/ltui) — ltui (Linear), jtui (Jira), sctui (Shortcut); where all of this came from, now backed by Pantheon
 - [**NaviTui**](https://github.com/Gheat1/NaviTui) — an animated terminal player for Navidrome, cover art and all
 - yours next?
 
