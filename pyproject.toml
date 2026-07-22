@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ricekit"
-version = "0.2.0"
+version = "0.3.0"
 description = "A developer's TUI suite for Textual — themes, widgets, modals, icons, and the design system behind ltui, jtui, and sctui"
 readme = "README.md"
 license = { text = "MIT" }
