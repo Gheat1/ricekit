@@ -24,6 +24,22 @@ from ricekit.widgets import KitFooter
 WIDTHS = (40, 60, 80, 120)
 
 
+async def _settle(pilot) -> None:
+    """Wait for the footer to reach its steady state after a mount or resize.
+
+    Populating the footer and then checking it for overflow is a chain of
+    several `call_after_refresh` hops: the screen's bindings-updated signal
+    triggers `bindings_changed`, which schedules a recompose; the recompose
+    mounts the real FooterKey children; KitFooter chains its own overflow
+    check onto that same refresh. `pilot.pause()` only guarantees draining
+    *one* such hop, which is plenty on a fast machine but not reliably
+    enough on a loaded CI runner. Pausing a few times drains the whole
+    chain deterministically instead of asserting mid-flight.
+    """
+    for _ in range(5):
+        await pilot.pause()
+
+
 def _visible_flow_keys(footer: KitFooter) -> list:
     """Non-docked children currently displayed (i.e. not trimmed)."""
     return [c for c in footer.children if c.display and c.styles.dock == "none"]
@@ -36,6 +52,17 @@ def _hidden_flow_keys(footer: KitFooter) -> list:
 
 def _docked_keys(footer: KitFooter) -> list:
     return [c for c in footer.children if c.styles.dock != "none"]
+
+
+def _visible_key_displays(footer: KitFooter) -> set[str]:
+    """Stable identity for a visible flow key: its key display string.
+
+    Not widget identity — a recompose (e.g. from a bindings change) mounts
+    brand-new FooterKey instances for the same bindings, so comparing raw
+    widgets across two separate settle points would spuriously "differ"
+    even when the same keys are showing.
+    """
+    return {c.key_display for c in _visible_flow_keys(footer)}
 
 
 def make_app(n: int, show_command_palette: bool = True) -> type[App]:
@@ -65,7 +92,7 @@ class SmallBindingSetTest(unittest.IsolatedAsyncioTestCase):
         app_cls = make_app(6)
         app = app_cls()
         async with app.run_test(size=(80, 24)) as pilot:
-            await pilot.pause()
+            await _settle(pilot)
             footer = app.query_one(KitFooter)
 
             self.assertEqual(footer.max_scroll_x, 0)
@@ -83,7 +110,7 @@ class ExcessiveBindingSetTest(unittest.IsolatedAsyncioTestCase):
             with self.subTest(width=width):
                 app = app_cls()
                 async with app.run_test(size=(width, 24)) as pilot:
-                    await pilot.pause()
+                    await _settle(pilot)
                     footer = app.query_one(KitFooter)
 
                     self.assertEqual(
@@ -101,7 +128,7 @@ class ExcessiveBindingSetTest(unittest.IsolatedAsyncioTestCase):
         for width in WIDTHS:
             app = app_cls()
             async with app.run_test(size=(width, 24)) as pilot:
-                await pilot.pause()
+                await _settle(pilot)
                 footer = app.query_one(KitFooter)
                 visible_counts[width] = len(_visible_flow_keys(footer))
 
@@ -122,7 +149,7 @@ class ResizeRevealTest(unittest.IsolatedAsyncioTestCase):
         app_cls = make_app(24)
         app = app_cls()
         async with app.run_test(size=(40, 24)) as pilot:
-            await pilot.pause()
+            await _settle(pilot)
             footer = app.query_one(KitFooter)
             self.assertEqual(footer.max_scroll_x, 0)
             narrow_visible = len(_visible_flow_keys(footer))
@@ -130,7 +157,7 @@ class ResizeRevealTest(unittest.IsolatedAsyncioTestCase):
             self.assertGreater(narrow_hidden, 0)
 
             await pilot.resize_terminal(120, 24)
-            await pilot.pause()
+            await _settle(pilot)
 
             self.assertEqual(footer.max_scroll_x, 0)
             wide_visible = len(_visible_flow_keys(footer))
@@ -142,18 +169,18 @@ class ResizeRevealTest(unittest.IsolatedAsyncioTestCase):
         app_cls = make_app(24)
         app = app_cls()
         async with app.run_test(size=(40, 24)) as pilot:
-            await pilot.pause()
+            await _settle(pilot)
             footer = app.query_one(KitFooter)
-            first_pass_visible = {c for c in _visible_flow_keys(footer)}
+            first_pass_visible = _visible_key_displays(footer)
 
             await pilot.resize_terminal(120, 24)
-            await pilot.pause()
+            await _settle(pilot)
             self.assertEqual(footer.max_scroll_x, 0)
 
             await pilot.resize_terminal(40, 24)
-            await pilot.pause()
+            await _settle(pilot)
             self.assertEqual(footer.max_scroll_x, 0)
-            second_pass_visible = {c for c in _visible_flow_keys(footer)}
+            second_pass_visible = _visible_key_displays(footer)
 
             self.assertEqual(first_pass_visible, second_pass_visible)
 
@@ -167,7 +194,7 @@ class CommandPaletteKeyTest(unittest.IsolatedAsyncioTestCase):
         app_cls = make_app(24, show_command_palette=True)
         app = app_cls()
         async with app.run_test(size=(40, 24)) as pilot:
-            await pilot.pause()
+            await _settle(pilot)
             footer = app.query_one(KitFooter)
 
             self.assertEqual(footer.max_scroll_x, 0)
@@ -180,7 +207,7 @@ class CommandPaletteKeyTest(unittest.IsolatedAsyncioTestCase):
         app_cls = make_app(24, show_command_palette=False)
         app = app_cls()
         async with app.run_test(size=(40, 24)) as pilot:
-            await pilot.pause()
+            await _settle(pilot)
             footer = app.query_one(KitFooter)
 
             self.assertEqual(footer.max_scroll_x, 0)
@@ -192,14 +219,14 @@ class CommandPaletteKeyTest(unittest.IsolatedAsyncioTestCase):
         app_cls = make_app(24, show_command_palette=True)
         app = app_cls()
         async with app.run_test(size=(60, 24)) as pilot:
-            await pilot.pause()
+            await _settle(pilot)
             footer = app.query_one(KitFooter)
             with_palette_visible = len(_visible_flow_keys(footer))
 
         app_cls_no_palette = make_app(24, show_command_palette=False)
         app2 = app_cls_no_palette()
         async with app2.run_test(size=(60, 24)) as pilot:
-            await pilot.pause()
+            await _settle(pilot)
             footer2 = app2.query_one(KitFooter)
             without_palette_visible = len(_visible_flow_keys(footer2))
 
