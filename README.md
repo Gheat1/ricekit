@@ -22,7 +22,7 @@ everything a fast, clean, rice-friendly terminal app needs, minus the app.
 | `ricekit.themes` | five themes — `mocha`, OLED-black `void`, monochrome `onyx`, **`clear`** (transparent: your terminal's blur shows through), **`system`** (your terminal's own ANSI palette) — all sharing one `$kit-*` CSS variable contract, with the scrollbar/selection fixes baked in |
 | `ricekit.palette` | swappable chrome palette (`palette.text`, `.dim`, `.blue`, …) that flips to terminal ANSI colors under the `system` theme |
 | `ricekit.app` | `KitApp` — registers the themes, flips `ansi_color` for transparent themes, injects CSS variables, replaces the palette's theme command with a live-preview picker |
-| `ricekit.widgets` | `NavList` (vim keys, quiet cursor), `Splitter` (drag-to-resize with persistence hook, double-click reset), `KitScroll`, `pop_in` (the one sanctioned animation) |
+| `ricekit.widgets` | `NavList` (vim keys, quiet cursor), `Splitter` (drag-to-resize with persistence hook, double-click reset), `KitScroll`, `KitFooter` (self-measuring `Footer` — trims trailing keys until it fits, guaranteed zero horizontal overflow), `pop_in` (the one sanctioned animation) |
 | `ricekit.modals` | `PickerModal` (generic chooser), `ThemeModal` (restyles the app live as you scroll), `HelpModal` (keybinding cheatsheet from plain data) |
 | `ricekit.icons` | curated nerd-font icons as `\uXXXX` escapes + unicode state glyphs (◌ ○ ◐ ◑ ● ⊘) + mini bar gauges |
 | `ricekit.fx` | text effects — the letter wave (`Wave` + `wave_markup`: **G**heat → g**H**eat → …) and braille spinner frames, driven by one cheap shared ticker |
@@ -48,11 +48,10 @@ uv add git+https://github.com/Gheat1/ricekit   # or pip install git+…
 
 ```python
 from textual.binding import Binding
-from textual.widgets import Footer
 
 from ricekit import KitApp, icons, palette
 from ricekit.storage import AppDirs
-from ricekit.widgets import NavList
+from ricekit.widgets import KitFooter, NavList
 
 DIRS = AppDirs("myapp")
 
@@ -65,7 +64,7 @@ class MyApp(KitApp):
 
     def compose(self):
         yield NavList(id="items")
-        yield Footer()
+        yield KitFooter()
 
     def on_mount(self):
         self.init_kit(theme=DIRS.load_state().get("theme"))

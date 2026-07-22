@@ -1,12 +1,18 @@
-"""Reusable widgets: vim-navigable lists, drag-to-resize splitters, motion."""
+"""Reusable widgets: vim-navigable lists, drag-to-resize splitters, an
+overflow-safe footer, motion."""
 
 from __future__ import annotations
 
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
 
+from textual import events
 from textual.binding import Binding
 from textual.containers import VerticalScroll
-from textual.widgets import OptionList, Static
+from textual.widget import Widget
+from textual.widgets import Footer, OptionList, Static
+
+if TYPE_CHECKING:
+    from textual.screen import Screen
 
 
 def pop_in(widget, duration: float = 0.15) -> None:
@@ -130,3 +136,104 @@ class Splitter(Static):
             self.app.query_one(self._target).styles.width = None
             if self._on_resized is not None:
                 self._on_resized(self._target, None)
+
+
+class KitFooter(Footer):
+    """A `Footer` that guarantees zero horizontal overflow.
+
+    DESIGN.md's doctrine is "Footer shows the ~7 keys that matter" — every
+    app hand-picks which of its own `Binding`s get `show=True` and hopes
+    the count and the terminal width cooperate. Stock `Footer` is a plain
+    `ScrollableContainer` with an invisible scrollbar
+    (`scrollbar-size: 0 0`), so when they don't cooperate the excess just
+    scrolls off screen with no visual indication anything is missing.
+
+    This subclass composes exactly like stock `Footer` — same children,
+    same CSS, `compact=True` by default instead of `False` — then, once
+    layout is known (on mount and on every resize), measures the real
+    arranged width of its children against the available width. If it
+    doesn't fit, it hides (never removes) trailing children in DOM order —
+    the ones from bindings declared latest in `BINDINGS`, the same
+    priority stock `Footer` already renders in — one at a time, until the
+    rest fits. Widening the terminal reveals hidden keys again; nothing is
+    ever a one-way hide. The docked command-palette key is budgeted for
+    but is never itself a trim candidate.
+
+    This does not try to show more than the app marked `show=True` — it
+    only ever hides. An app that already fits inside ~7 keys should see
+    this do nothing at any reasonable width.
+    """
+
+    def __init__(
+        self,
+        *children: Widget,
+        name: str | None = None,
+        id: str | None = None,
+        classes: str | None = None,
+        disabled: bool = False,
+        show_command_palette: bool = True,
+        compact: bool = True,
+    ) -> None:
+        super().__init__(
+            *children,
+            name=name,
+            id=id,
+            classes=classes,
+            disabled=disabled,
+            show_command_palette=show_command_palette,
+            compact=compact,
+        )
+
+    def on_mount(self) -> None:
+        super().on_mount()
+        self.call_after_refresh(self._enforce_no_overflow)
+
+    def on_resize(self, event: events.Resize) -> None:
+        self._enforce_no_overflow()
+
+    def bindings_changed(self, screen: Screen) -> None:
+        # Fires on mount (once bindings are known) and whenever the active
+        # bindings change; the base class recomposes after a refresh — chain
+        # our check onto the same refresh so it sees the real children.
+        super().bindings_changed(screen)
+        self.call_after_refresh(self._enforce_no_overflow)
+
+    def _enforce_no_overflow(self) -> None:
+        """Trim trailing flow children until nothing overflows.
+
+        `self.arrange()` gives a real `DockArrangeResult` computed from the
+        current DOM — the same math Textual itself uses to derive
+        `virtual_size`/`max_scroll_x` — without waiting on the reactive
+        pipeline to catch up, so this can run synchronously in a tight
+        loop. The arrangement cache is keyed on child count, not on
+        `display`, so it has to be cleared by hand after every toggle.
+        """
+        if not self.is_mounted or not self.is_attached:
+            return
+        size = self.size
+        if size.width <= 0:
+            return
+
+        # Only children in normal flow are trim candidates — the docked
+        # command-palette key is a fixed fixture, budgeted for below but
+        # never hidden.
+        candidates = [child for child in self.children if child.styles.dock == "none"]
+        if not candidates:
+            return
+
+        # Un-hide everything first: this is what lets a resize back to a
+        # wider terminal bring previously-hidden keys back, instead of
+        # leaving them hidden forever.
+        if any(not child.display for child in candidates):
+            for child in candidates:
+                child.display = True
+            self._clear_arrangement_cache()
+
+        # Hide from the end — lowest priority, latest in BINDINGS — one at
+        # a time, re-measuring after each, until the rest fits.
+        for child in reversed(candidates):
+            self._clear_arrangement_cache()
+            if self.arrange(size).total_region.width <= size.width:
+                return
+            child.display = False
+        self._clear_arrangement_cache()

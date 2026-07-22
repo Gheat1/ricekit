@@ -6,7 +6,7 @@ siblings jtui (Jira) and sctui (Shortcut): everything a fast,
 clean, rice-friendly terminal app needs, minus the app.
 
     from ricekit import KitApp, palette, icons
-    from ricekit.widgets import NavList, Splitter, KitScroll, pop_in
+    from ricekit.widgets import NavList, Splitter, KitScroll, KitFooter, pop_in
     from ricekit.modals import PickerModal, ThemeModal, HelpModal
     from ricekit.storage import AppDirs
 
